@@ -1,0 +1,117 @@
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+*.tfvars
+!*.tfvars.example
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Packer
+packer_cache/
+*.box
+output-*/
+manifest.json
+
+# Ansible
+*.retry
+.vault_pass
+ansible.cfg.local
+inventory/*.yml
+!inventory/*.yml.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+.venv/
+.env
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Go (Terratest)
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Credentials and secrets
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+credentials.json
+service-account*.json
+secrets.yml
+vault.yml
+.vault_password
+
+# Logs
+*.log
+logs/
+
+# Build artifacts
+target/
+bin/
+obj/
+*.war
+*.ear
+*.jar
+*.dll
+*.nupkg
+
+# Test reports (keep directory, ignore contents except .gitkeep)
+docs/test-reports/*
+!docs/test-reports/.gitkeep
+
+# Molecule
+.molecule/
+.cache/
+
+# InSpec
+inspec.lock
+
+# Jenkins
+*.groovy.swp
+
+# Local configuration
+local.tf
+local.tfvars
+*.local.*
