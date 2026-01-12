@@ -1,0 +1,40 @@
+---
+# Molecule Verify Playbook for .NET App Deployment Role
+
+- name: Verify .NET App Deployment
+  hosts: all
+  gather_facts: true
+
+  vars:
+    dotnet_app_name: TestDotNetApp
+    dotnet_app_physical_path: C:\inetpub\wwwroot\testsite\testapp
+
+  tasks:
+    - name: Verify application directory exists
+      ansible.windows.win_stat:
+        path: "{{ dotnet_app_physical_path }}"
+      register: app_dir
+      failed_when: not app_dir.stat.exists
+
+    - name: Verify web.config exists
+      ansible.windows.win_stat:
+        path: "{{ dotnet_app_physical_path }}\\web.config"
+      register: web_config
+      failed_when: not web_config.stat.exists
+
+    - name: Check IIS application is configured
+      ansible.windows.win_shell: |
+        Import-Module WebAdministration
+        $app = Get-WebApplication -Name "{{ dotnet_app_name }}" -Site "TestSite"
+        if ($app) { exit 0 } else { exit 1 }
+      register: iis_app
+      failed_when: iis_app.rc != 0
+      ignore_errors: true
+
+    - name: Display verification summary
+      ansible.builtin.debug:
+        msg: |
+          .NET App Deployment Verification Summary:
+          - Application Directory: {{ app_dir.stat.exists | ternary('OK', 'FAILED') }}
+          - Web.config File: {{ web_config.stat.exists | ternary('OK', 'FAILED') }}
+          - IIS Application: {{ (iis_app.rc | default(1) == 0) | ternary('OK', 'NOT CONFIGURED') }}

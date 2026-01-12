@@ -1,0 +1,10 @@
+---
+# SQL Server Client Variables - Windows
+
+sqlserver_odbc_download_url: "https://go.microsoft.com/fwlink/?linkid=2249006"
+
+# Windows packages are handled via Chocolatey or direct MSI installation
+# Package names for Chocolatey
+sqlserver_chocolatey_packages:
+  - sqlserver-odbcdriver
+  - sqlserver-cmdlineutils

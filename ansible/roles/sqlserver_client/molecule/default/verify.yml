@@ -1,0 +1,52 @@
+---
+# Molecule Verify Playbook for SQL Server Client Role
+
+- name: Verify SQL Server Client Installation
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    sqlserver_odbc_ini_path: /etc/odbc.ini
+    sqlserver_jdbc_install_path: /opt/microsoft/jdbc
+
+  tasks:
+    - name: Verify ODBC driver is installed
+      ansible.builtin.command: odbcinst -q -d
+      register: odbc_drivers
+      changed_when: false
+      failed_when: odbc_drivers.rc != 0
+
+    - name: Verify sqlcmd is available
+      ansible.builtin.command: which sqlcmd
+      register: sqlcmd_path
+      changed_when: false
+      failed_when: sqlcmd_path.rc != 0
+
+    - name: Verify odbc.ini exists
+      ansible.builtin.stat:
+        path: "{{ sqlserver_odbc_ini_path }}"
+      register: odbc_ini
+      failed_when: not odbc_ini.stat.exists
+
+    - name: Verify environment profile is installed
+      ansible.builtin.stat:
+        path: /etc/profile.d/sqlserver-env.sh
+      register: env_profile
+      failed_when: not env_profile.stat.exists
+
+    - name: Verify JDBC driver directory exists
+      ansible.builtin.stat:
+        path: "{{ sqlserver_jdbc_install_path }}"
+      register: jdbc_dir
+      failed_when: not jdbc_dir.stat.exists
+
+    - name: Display verification summary
+      ansible.builtin.debug:
+        msg: |
+          SQL Server Client Verification Summary:
+          - ODBC Driver: {{ (odbc_drivers.rc == 0) | ternary('OK', 'FAILED') }}
+          - sqlcmd Tool: {{ (sqlcmd_path.rc == 0) | ternary('OK', 'FAILED') }}
+          - ODBC Config: {{ odbc_ini.stat.exists | ternary('OK', 'FAILED') }}
+          - Environment Profile: {{ env_profile.stat.exists | ternary('OK', 'FAILED') }}
+          - JDBC Directory: {{ jdbc_dir.stat.exists | ternary('OK', 'FAILED') }}

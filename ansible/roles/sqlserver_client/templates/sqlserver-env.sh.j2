@@ -1,0 +1,19 @@
+#!/bin/bash
+# SQL Server Environment Variables
+# Managed by Ansible - Do not edit manually
+
+# Add SQL Server tools to PATH
+export PATH="$PATH:/opt/mssql-tools18/bin"
+
+# JDBC Driver location
+{% if sqlserver_install_jdbc_driver | default(true) %}
+export SQLSERVER_JDBC_JAR="{{ sqlserver_jdbc_install_path }}/mssql-jdbc.jar"
+{% endif %}
+
+# Default ODBC configuration
+export ODBCSYSINI="{{ sqlserver_odbc_config_dir }}"
+
+{% if sqlserver_ssl_enabled | default(false) %}
+# SSL Certificate paths
+export SQLSERVER_SSL_CA="{{ sqlserver_ssl_cert_dir }}/server-ca.pem"
+{% endif %}

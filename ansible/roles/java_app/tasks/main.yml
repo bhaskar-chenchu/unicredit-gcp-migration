@@ -1,0 +1,126 @@
+---
+# Java Application Deployment Role - Main Tasks
+# UniCredit GCP Migration
+
+- name: Ensure deployment directory exists
+  ansible.builtin.file:
+    path: "{{ java_app_deploy_dir }}"
+    state: directory
+    owner: "{{ java_app_user }}"
+    group: "{{ java_app_group }}"
+    mode: '0755'
+  tags: java_app
+
+- name: Ensure backup directory exists
+  ansible.builtin.file:
+    path: "{{ java_app_backup_dir }}"
+    state: directory
+    owner: "{{ java_app_user }}"
+    group: "{{ java_app_group }}"
+    mode: '0755'
+  when: java_app_backup_enabled
+  tags: java_app
+
+- name: Check if current deployment exists
+  ansible.builtin.stat:
+    path: "{{ java_app_deploy_dir }}/{{ java_app_artifact_name }}"
+  register: current_deployment
+  tags: java_app
+
+- name: Backup current deployment
+  ansible.builtin.copy:
+    src: "{{ java_app_deploy_dir }}/{{ java_app_artifact_name }}"
+    dest: "{{ java_app_backup_dir }}/{{ java_app_artifact_name }}.{{ ansible_date_time.epoch }}"
+    remote_src: true
+    owner: "{{ java_app_user }}"
+    group: "{{ java_app_group }}"
+  when:
+    - java_app_backup_enabled
+    - current_deployment.stat.exists
+  tags: java_app
+
+- name: Download application artifact from URL
+  ansible.builtin.get_url:
+    url: "{{ java_app_artifact_url }}"
+    dest: "{{ java_app_deploy_dir }}/{{ java_app_artifact_name }}"
+    owner: "{{ java_app_user }}"
+    group: "{{ java_app_group }}"
+    mode: '0644'
+    checksum: "{{ java_app_artifact_checksum | default(omit) }}"
+  when: java_app_artifact_url is defined
+  notify: restart application
+  tags: java_app
+
+- name: Copy application artifact from local
+  ansible.builtin.copy:
+    src: "{{ java_app_local_artifact }}"
+    dest: "{{ java_app_deploy_dir }}/{{ java_app_artifact_name }}"
+    owner: "{{ java_app_user }}"
+    group: "{{ java_app_group }}"
+    mode: '0644'
+  when: java_app_local_artifact is defined
+  notify: restart application
+  tags: java_app
+
+- name: Deploy application configuration files
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ java_app_user }}"
+    group: "{{ java_app_group }}"
+    mode: "{{ item.mode | default('0644') }}"
+  loop: "{{ java_app_config_files }}"
+  when: java_app_config_files | length > 0
+  notify: restart application
+  tags: java_app
+
+- name: Deploy to WildFly deployments directory
+  ansible.builtin.copy:
+    src: "{{ java_app_deploy_dir }}/{{ java_app_artifact_name }}"
+    dest: "{{ wildfly_deployments_dir }}/{{ java_app_artifact_name }}"
+    remote_src: true
+    owner: "{{ java_app_user }}"
+    group: "{{ java_app_group }}"
+    mode: '0644'
+  when: java_app_deploy_to_wildfly
+  notify: restart application
+  tags: java_app
+
+- name: Create deployment marker file
+  ansible.builtin.file:
+    path: "{{ wildfly_deployments_dir }}/{{ java_app_artifact_name }}.dodeploy"
+    state: touch
+    owner: "{{ java_app_user }}"
+    group: "{{ java_app_group }}"
+    mode: '0644'
+  when: java_app_deploy_to_wildfly
+  tags: java_app
+
+- name: Wait for deployment to complete
+  ansible.builtin.wait_for:
+    path: "{{ wildfly_deployments_dir }}/{{ java_app_artifact_name }}.deployed"
+    timeout: "{{ java_app_deploy_timeout }}"
+  when: java_app_deploy_to_wildfly
+  tags: java_app
+
+- name: Verify application health
+  ansible.builtin.uri:
+    url: "{{ java_app_health_url }}"
+    method: GET
+    status_code: 200
+    timeout: "{{ java_app_health_timeout }}"
+  register: health_check
+  retries: "{{ java_app_health_retries }}"
+  delay: "{{ java_app_health_delay }}"
+  until: health_check.status == 200
+  when: java_app_health_check_enabled
+  tags: java_app
+
+- name: Clean up old backups
+  ansible.builtin.shell: |
+    ls -t {{ java_app_backup_dir }}/ | tail -n +{{ java_app_backup_keep + 1 }} | xargs -I {} rm -f {{ java_app_backup_dir }}/{}
+  when:
+    - java_app_backup_enabled
+    - java_app_backup_cleanup
+  changed_when: false
+  tags: java_app

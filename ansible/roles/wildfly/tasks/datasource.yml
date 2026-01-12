@@ -1,0 +1,25 @@
+---
+# Datasource Configuration Tasks
+
+- name: Configure datasource via CLI
+  ansible.builtin.shell: |
+    {{ wildfly_home }}/bin/jboss-cli.sh --connect --command="
+    if (outcome != success) of /subsystem=datasources/data-source={{ datasource.name }}:read-resource
+      /subsystem=datasources/data-source={{ datasource.name }}:add(\
+        jndi-name={{ datasource.jndi_name }},\
+        driver-name={{ datasource.driver_name }},\
+        connection-url={{ datasource.connection_url }},\
+        user-name={{ datasource.username }},\
+        password={{ datasource.password }},\
+        min-pool-size={{ datasource.min_pool_size | default(5) }},\
+        max-pool-size={{ datasource.max_pool_size | default(20) }},\
+        valid-connection-checker-class-name={{ datasource.connection_checker | default('org.jboss.jca.adapters.jdbc.extensions.postgres.PostgreSQLValidConnectionChecker') }},\
+        validate-on-match=true,\
+        background-validation=false\
+      )
+    end-if"
+  register: datasource_result
+  changed_when: "'success' in datasource_result.stdout"
+  failed_when: "'failed' in datasource_result.stdout"
+  no_log: true
+  notify: restart wildfly

@@ -1,0 +1,13 @@
+# PostgreSQL Service Configuration
+# Managed by Ansible - Do not edit manually
+{% for service in postgresql_client_services %}
+
+[{{ service.name }}]
+host={{ service.host }}
+port={{ service.port | default(5432) }}
+dbname={{ service.dbname }}
+user={{ service.user }}
+{% if service.sslmode is defined %}
+sslmode={{ service.sslmode }}
+{% endif %}
+{% endfor %}

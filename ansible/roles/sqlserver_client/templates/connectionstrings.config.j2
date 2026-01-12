@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SQL Server Connection Strings Configuration -->
+<!-- Managed by Ansible - Do not edit manually -->
+<connectionStrings>
+{% for conn in sqlserver_connections %}
+  <add name="{{ conn.name }}"
+       connectionString="Server={{ conn.server }}{% if conn.port is defined %},{{ conn.port }}{% endif %};Database={{ conn.database }};{% if conn.integrated_security | default(false) %}Integrated Security=True;{% else %}User Id={{ conn.user }};Password={{ conn.password }};{% endif %}Encrypt={{ conn.encrypt | default(true) | ternary('True', 'False') }};TrustServerCertificate={{ conn.trust_server_certificate | default(false) | ternary('True', 'False') }};{% if conn.application_name is defined %}Application Name={{ conn.application_name }};{% endif %}{% if conn.connect_timeout is defined %}Connect Timeout={{ conn.connect_timeout }};{% endif %}"
+       providerName="System.Data.SqlClient" />
+{% endfor %}
+</connectionStrings>

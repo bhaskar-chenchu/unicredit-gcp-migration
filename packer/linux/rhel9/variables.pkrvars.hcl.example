@@ -1,0 +1,15 @@
+# Example variables file for RHEL 9 WildFly image
+# Copy to variables.pkrvars.hcl and fill in values
+
+project_id           = "your-gcp-project-id"
+zone                 = "us-central1-a"
+source_image_family  = "rhel-9"
+source_image_project = "rhel-cloud"
+machine_type         = "n2-standard-2"
+disk_size            = 50
+java_version         = "17"
+wildfly_version      = "30.0.1.Final"
+image_name_prefix    = "rhel9-wildfly"
+image_family         = "rhel9-wildfly"
+network              = "default"
+subnetwork           = "default"

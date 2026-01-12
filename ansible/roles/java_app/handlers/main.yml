@@ -1,0 +1,18 @@
+---
+# Java Application Role Handlers
+
+- name: restart application
+  ansible.builtin.systemd:
+    name: wildfly
+    state: restarted
+  when: java_app_restart_on_deploy
+
+- name: stop application
+  ansible.builtin.systemd:
+    name: wildfly
+    state: stopped
+
+- name: start application
+  ansible.builtin.systemd:
+    name: wildfly
+    state: started

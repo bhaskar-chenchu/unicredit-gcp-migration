@@ -1,0 +1,13 @@
+#!/bin/bash
+# WildFly Launch Script
+# Managed by Ansible - Do not edit manually
+
+if [ "x$WILDFLY_HOME" = "x" ]; then
+    WILDFLY_HOME="{{ wildfly_home }}"
+fi
+
+if [ "x$1" = "xdomain" ]; then
+    $WILDFLY_HOME/bin/domain.sh -c $2 -b $3
+else
+    $WILDFLY_HOME/bin/standalone.sh -c $2 -b $3 -bmanagement {{ wildfly_bind_address_management }}
+fi

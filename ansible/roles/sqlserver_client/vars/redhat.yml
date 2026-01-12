@@ -1,0 +1,10 @@
+---
+# SQL Server Client Variables - Red Hat Family
+
+sqlserver_client_packages:
+  - msodbcsql18
+  - mssql-tools18
+
+sqlserver_unixodbc_packages:
+  - unixODBC
+  - unixODBC-devel

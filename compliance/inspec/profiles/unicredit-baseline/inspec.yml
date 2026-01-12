@@ -1,0 +1,45 @@
+name: unicredit-baseline
+title: UniCredit GCP Migration Baseline Profile
+maintainer: UniCredit Migration Team
+copyright: UniCredit
+copyright_email: migration-team@unicredit.example.com
+license: MIT
+summary: Baseline compliance controls for UniCredit GCP migration
+version: 1.0.0
+
+supports:
+  - platform-family: linux
+  - platform-family: windows
+
+depends: []
+
+inputs:
+  - name: org_name
+    type: String
+    value: UniCredit
+    description: Organization name
+
+  - name: system_owner
+    type: String
+    value: migration-team@unicredit.example.com
+    description: System owner contact
+
+  - name: enable_network_controls
+    type: Boolean
+    value: true
+    description: Enable network security controls
+
+  - name: enable_logging_controls
+    type: Boolean
+    value: true
+    description: Enable logging controls
+
+  - name: allowed_ssh_ports
+    type: Array
+    value: [22]
+    description: Allowed SSH ports
+
+  - name: required_services
+    type: Array
+    value: []
+    description: Services that must be running

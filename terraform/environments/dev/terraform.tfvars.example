@@ -1,0 +1,17 @@
+# Example terraform.tfvars for dev environment
+# Copy to terraform.tfvars and fill in values
+
+project_id  = "your-gcp-project-id"
+region      = "us-central1"
+zones       = ["us-central1-a", "us-central1-b"]
+environment = "dev"
+
+ssh_source_ranges = ["35.235.240.0/20"]
+rdp_source_ranges = ["35.235.240.0/20"]
+
+app_a_image = "projects/your-project/global/images/rhel9-wildfly-latest"
+app_b_image = "projects/your-project/global/images/win2022-iis-latest"
+
+# Sensitive values - use environment variables or secrets manager
+# postgres_password = "your-secure-password"
+# sqlserver_password = "your-secure-password"

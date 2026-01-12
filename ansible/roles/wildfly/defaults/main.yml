@@ -1,0 +1,64 @@
+---
+# WildFly Role Default Variables
+
+# WildFly version and download
+wildfly_version: "30.0.1.Final"
+wildfly_download_url: "https://github.com/wildfly/wildfly/releases/download/{{ wildfly_version }}/wildfly-{{ wildfly_version }}.tar.gz"
+
+# Installation paths
+wildfly_install_dir: /opt
+wildfly_home: /opt/wildfly
+wildfly_log_dir: /var/log/wildfly
+
+# User and group
+wildfly_user: wildfly
+wildfly_group: wildfly
+
+# Java settings
+wildfly_java_home: /usr/lib/jvm/java-17-openjdk
+wildfly_java_opts: "-Xms512m -Xmx2048m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m"
+
+# Network settings
+wildfly_bind_address: 0.0.0.0
+wildfly_bind_address_management: 127.0.0.1
+wildfly_http_port: 8080
+wildfly_https_port: 8443
+wildfly_management_port: 9990
+wildfly_ajp_port: 8009
+
+# Mode
+wildfly_mode: standalone
+wildfly_config: standalone.xml
+
+# Configuration
+wildfly_configure_standalone: false
+wildfly_restart_on_change: true
+
+# JDBC Driver
+wildfly_install_jdbc_driver: true
+postgresql_jdbc_version: "42.7.1"
+postgresql_jdbc_url: "https://jdbc.postgresql.org/download/postgresql-{{ postgresql_jdbc_version }}.jar"
+
+# Datasources (list of datasource configurations)
+wildfly_datasources: []
+# Example:
+# wildfly_datasources:
+#   - name: AppDS
+#     jndi_name: java:jboss/datasources/AppDS
+#     driver_name: postgresql
+#     connection_url: jdbc:postgresql://localhost:5432/appdb
+#     username: appuser
+#     password: apppassword
+#     min_pool_size: 5
+#     max_pool_size: 20
+
+# Deployments directory
+wildfly_deployments_dir: "{{ wildfly_home }}/standalone/deployments"
+
+# Admin user (optional)
+wildfly_admin_user: ""
+wildfly_admin_password: ""
+
+# Logging
+wildfly_console_log: "{{ wildfly_log_dir }}/console.log"
+wildfly_server_log: "{{ wildfly_home }}/standalone/log/server.log"

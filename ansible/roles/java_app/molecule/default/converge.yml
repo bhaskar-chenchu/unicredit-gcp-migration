@@ -1,0 +1,30 @@
+---
+# Molecule Converge Playbook for Java App Deployment Role
+
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Create mock WAR file for testing
+      ansible.builtin.file:
+        path: /tmp/test.war
+        state: touch
+        mode: '0644'
+
+    - name: Create mock WildFly deployment directory
+      ansible.builtin.file:
+        path: /opt/wildfly/standalone/deployments
+        state: directory
+        mode: '0755'
+
+    - name: Set WAR source for testing
+      ansible.builtin.set_fact:
+        java_app_war_source: "/tmp/test.war"
+
+  roles:
+    - role: java_app
+      vars:
+        java_app_name: testapp
+        java_app_war_source: "/tmp/test.war"
+        java_app_healthcheck_enabled: false

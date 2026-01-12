@@ -1,0 +1,17 @@
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server={{ dotnet_app_db_server }};Database={{ dotnet_app_db_name }};User Id={{ dotnet_app_db_user }};Password={{ dotnet_app_db_password }};TrustServerCertificate=True;"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information"
+    }
+  },
+  "AllowedHosts": "*",
+  "Application": {
+    "Name": "{{ dotnet_app_name }}",
+    "Environment": "{{ dotnet_app_environment | default('Production') }}"
+  }
+}

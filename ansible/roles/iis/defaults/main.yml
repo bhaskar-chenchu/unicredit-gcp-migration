@@ -1,0 +1,81 @@
+---
+# IIS Role Default Variables
+
+# IIS Features to install
+iis_features:
+  - Web-Server
+  - Web-WebServer
+  - Web-Common-Http
+  - Web-Static-Content
+  - Web-Default-Doc
+  - Web-Dir-Browsing
+  - Web-Http-Errors
+  - Web-App-Dev
+  - Web-Asp-Net45
+  - Web-Net-Ext45
+  - Web-ISAPI-Ext
+  - Web-ISAPI-Filter
+  - Web-Health
+  - Web-Http-Logging
+  - Web-Log-Libraries
+  - Web-Request-Monitor
+  - Web-Security
+  - Web-Filtering
+  - Web-Basic-Auth
+  - Web-Windows-Auth
+  - Web-Performance
+  - Web-Stat-Compression
+  - Web-Dyn-Compression
+  - Web-Mgmt-Tools
+  - Web-Mgmt-Console
+
+# .NET Features
+dotnet_features:
+  - NET-Framework-45-Features
+  - NET-Framework-45-Core
+  - NET-Framework-45-ASPNET
+  - NET-WCF-Services45
+
+# Directories
+iis_app_root: "C:\\inetpub\\apps"
+iis_log_dir: "C:\\logs\\iis"
+iis_temp_dir: "C:\\inetpub\\temp"
+
+# Default site
+iis_remove_default_site: true
+
+# Application Pools
+iis_app_pools: []
+# Example:
+# iis_app_pools:
+#   - name: AppPool1
+#     runtime_version: v4.0
+#     pipeline_mode: Integrated
+#     start_mode: OnDemand
+#     identity_type: ApplicationPoolIdentity
+
+# Websites
+iis_sites: []
+# Example:
+# iis_sites:
+#   - name: MySite
+#     port: 80
+#     physical_path: C:\inetpub\apps\mysite
+#     app_pool: AppPool1
+
+# HTTPS Bindings
+iis_https_bindings: []
+# Example:
+# iis_https_bindings:
+#   - site_name: MySite
+#     https_port: 443
+#     cert_hash: ABC123...
+#     cert_store: My
+
+# Logging
+iis_log_format: W3C
+iis_log_period: Daily
+
+# Request filtering
+iis_configure_request_filtering: true
+iis_allow_double_escaping: false

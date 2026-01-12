@@ -1,0 +1,206 @@
+---
+# SQL Server Client Role - Main Tasks
+# Configures SQL Server client tools, ODBC drivers, and connectivity
+
+- name: Include OS-specific variables
+  ansible.builtin.include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_os_family | lower }}.yml"
+    - "default.yml"
+
+# Windows Configuration
+- name: Configure Windows SQL Server client
+  when: ansible_os_family == 'Windows'
+  block:
+    - name: Install SQL Server ODBC Driver via Chocolatey
+      chocolatey.chocolatey.win_chocolatey:
+        name: "{{ sqlserver_odbc_driver_package }}"
+        version: "{{ sqlserver_odbc_driver_version | default(omit) }}"
+        state: present
+      when: sqlserver_use_chocolatey | default(true)
+
+    - name: Download SQL Server ODBC Driver installer
+      ansible.windows.win_get_url:
+        url: "{{ sqlserver_odbc_download_url }}"
+        dest: "{{ sqlserver_temp_dir }}\\msodbcsql.msi"
+      when: not (sqlserver_use_chocolatey | default(true))
+      register: odbc_download
+
+    - name: Install SQL Server ODBC Driver from MSI
+      ansible.windows.win_package:
+        path: "{{ sqlserver_temp_dir }}\\msodbcsql.msi"
+        arguments: /quiet /norestart IACCEPTMSODBCSQLLICENSETERMS=YES
+        state: present
+      when: not (sqlserver_use_chocolatey | default(true)) and odbc_download.changed
+
+    - name: Install SQL Server Command Line Utilities
+      chocolatey.chocolatey.win_chocolatey:
+        name: "{{ sqlserver_cmdline_tools_package }}"
+        state: present
+      when: sqlserver_install_cmdline_tools | default(true)
+
+    - name: Install SqlClient NuGet package for .NET applications
+      ansible.windows.win_shell: |
+        Install-PackageProvider -Name NuGet -Force -Scope CurrentUser
+        Install-Package Microsoft.Data.SqlClient -Force -Scope CurrentUser -SkipDependencies
+      when: sqlserver_install_sqlclient | default(false)
+
+    - name: Create SQL Server connection strings directory
+      ansible.windows.win_file:
+        path: "{{ sqlserver_connection_strings_dir }}"
+        state: directory
+
+    - name: Deploy connection strings configuration
+      ansible.windows.win_template:
+        src: connectionstrings.config.j2
+        dest: "{{ sqlserver_connection_strings_dir }}\\connectionstrings.config"
+      when: sqlserver_connections | length > 0
+
+    - name: Configure ODBC DSN entries
+      ansible.windows.win_shell: |
+        Add-OdbcDsn -Name "{{ item.name }}" `
+          -DriverName "{{ sqlserver_odbc_driver_name }}" `
+          -DsnType "{{ item.dsn_type | default('System') }}" `
+          -SetPropertyValue @(
+            "Server={{ item.server }}",
+            "Database={{ item.database }}",
+            "Encrypt={{ item.encrypt | default('yes') }}",
+            "TrustServerCertificate={{ item.trust_cert | default('no') }}"
+          )
+      loop: "{{ sqlserver_odbc_dsn_entries }}"
+      when: sqlserver_odbc_dsn_entries | length > 0
+
+    - name: Store SQL Server credentials in Windows Credential Manager
+      ansible.windows.win_shell: |
+        cmdkey /generic:{{ item.server }} /user:{{ item.user }} /pass:{{ item.password }}
+      loop: "{{ sqlserver_stored_credentials }}"
+      when: sqlserver_stored_credentials | length > 0
+      no_log: true
+
+# Linux Configuration
+- name: Configure Linux SQL Server client
+  when: ansible_os_family in ['RedHat', 'Debian']
+  block:
+    - name: Add Microsoft repository signing key (RHEL)
+      ansible.builtin.rpm_key:
+        key: https://packages.microsoft.com/keys/microsoft.asc
+        state: present
+      when: ansible_os_family == 'RedHat'
+
+    - name: Add Microsoft repository (RHEL 9)
+      ansible.builtin.yum_repository:
+        name: packages-microsoft-com-prod
+        description: Microsoft RHEL packages
+        baseurl: "https://packages.microsoft.com/rhel/{{ ansible_distribution_major_version }}/prod/"
+        gpgcheck: true
+        gpgkey: https://packages.microsoft.com/keys/microsoft.asc
+        enabled: true
+      when: ansible_os_family == 'RedHat'
+
+    - name: Add Microsoft repository signing key (Debian)
+      ansible.builtin.apt_key:
+        url: https://packages.microsoft.com/keys/microsoft.asc
+        state: present
+      when: ansible_os_family == 'Debian'
+
+    - name: Add Microsoft repository (Debian)
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=amd64] https://packages.microsoft.com/ubuntu/{{ ansible_distribution_version }}/prod {{ ansible_distribution_release }} main"
+        state: present
+      when: ansible_os_family == 'Debian'
+
+    - name: Accept EULA for msodbcsql packages
+      ansible.builtin.shell: |
+        echo 'msodbcsql18 msodbcsql/ACCEPT_EULA boolean true' | debconf-set-selections
+      when: ansible_os_family == 'Debian'
+      changed_when: false
+
+    - name: Install SQL Server ODBC Driver packages
+      ansible.builtin.package:
+        name: "{{ sqlserver_client_packages }}"
+        state: present
+      environment:
+        ACCEPT_EULA: "Y"
+
+    - name: Install unixODBC development packages
+      ansible.builtin.package:
+        name: "{{ sqlserver_unixodbc_packages }}"
+        state: present
+
+    - name: Create ODBC configuration directory
+      ansible.builtin.file:
+        path: "{{ sqlserver_odbc_config_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Deploy odbc.ini configuration
+      ansible.builtin.template:
+        src: odbc.ini.j2
+        dest: "{{ sqlserver_odbc_ini_path }}"
+        mode: '0644'
+      when: sqlserver_odbc_dsn_entries | length > 0
+
+    - name: Create SQL Server environment profile
+      ansible.builtin.template:
+        src: sqlserver-env.sh.j2
+        dest: /etc/profile.d/sqlserver-env.sh
+        mode: '0644'
+
+    - name: Download Microsoft JDBC Driver for SQL Server
+      ansible.builtin.get_url:
+        url: "{{ sqlserver_jdbc_download_url }}"
+        dest: "{{ sqlserver_jdbc_temp_path }}"
+        mode: '0644'
+      when: sqlserver_install_jdbc_driver | default(true)
+      register: jdbc_download
+
+    - name: Create JDBC driver directory
+      ansible.builtin.file:
+        path: "{{ sqlserver_jdbc_install_path }}"
+        state: directory
+        mode: '0755'
+      when: sqlserver_install_jdbc_driver | default(true)
+
+    - name: Extract JDBC driver
+      ansible.builtin.unarchive:
+        src: "{{ sqlserver_jdbc_temp_path }}"
+        dest: "{{ sqlserver_jdbc_install_path }}"
+        remote_src: true
+        creates: "{{ sqlserver_jdbc_install_path }}/sqljdbc_{{ sqlserver_jdbc_version }}"
+      when: sqlserver_install_jdbc_driver | default(true) and jdbc_download.changed
+
+    - name: Create symlink to JDBC driver JAR
+      ansible.builtin.file:
+        src: "{{ sqlserver_jdbc_install_path }}/sqljdbc_{{ sqlserver_jdbc_version }}/enu/jars/mssql-jdbc-{{ sqlserver_jdbc_version }}.jre{{ sqlserver_jdbc_jre_version }}.jar"
+        dest: "{{ sqlserver_jdbc_install_path }}/mssql-jdbc.jar"
+        state: link
+      when: sqlserver_install_jdbc_driver | default(true)
+
+# SSL Certificate Configuration
+- name: Include SSL configuration
+  ansible.builtin.include_tasks: ssl.yml
+  when: sqlserver_ssl_enabled | default(false)
+
+# Connection Testing
+- name: Test SQL Server connectivity
+  when: sqlserver_test_connection | default(false)
+  block:
+    - name: Test connection (Windows)
+      ansible.windows.win_shell: |
+        sqlcmd -S {{ sqlserver_test_server }} -U {{ sqlserver_test_user }} -P {{ sqlserver_test_password }} -Q "SELECT 1" -C
+      register: windows_connection_test
+      when: ansible_os_family == 'Windows'
+      no_log: true
+      failed_when: false
+
+    - name: Test connection (Linux)
+      ansible.builtin.shell: |
+        sqlcmd -S {{ sqlserver_test_server }} -U {{ sqlserver_test_user }} -P {{ sqlserver_test_password }} -Q "SELECT 1" -C
+      register: linux_connection_test
+      when: ansible_os_family in ['RedHat', 'Debian']
+      no_log: true
+      failed_when: false
+
+    - name: Display connection test result
+      ansible.builtin.debug:
+        msg: "SQL Server connection test {{ 'succeeded' if (windows_connection_test.rc | default(linux_connection_test.rc | default(1))) == 0 else 'failed' }}"

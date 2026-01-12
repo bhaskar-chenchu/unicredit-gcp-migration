@@ -1,0 +1,6 @@
+# PostgreSQL Password File
+# Managed by Ansible - Do not edit manually
+# Format: hostname:port:database:username:password
+{% for conn in postgresql_client_connections %}
+{{ conn.host }}:{{ conn.port | default(5432) }}:{{ conn.database }}:{{ conn.user }}:{{ conn.password }}
+{% endfor %}

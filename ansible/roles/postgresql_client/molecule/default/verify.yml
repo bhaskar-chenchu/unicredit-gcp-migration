@@ -1,0 +1,45 @@
+---
+# Molecule Verify Playbook for PostgreSQL Client Role
+
+- name: Verify PostgreSQL Client Installation
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    postgresql_client_service_file: /etc/pg_service.conf
+    postgresql_jdbc_install_path: /opt/jdbc
+
+  tasks:
+    - name: Verify PostgreSQL client is installed
+      ansible.builtin.command: psql --version
+      register: psql_version
+      changed_when: false
+      failed_when: psql_version.rc != 0
+
+    - name: Verify pg_service.conf exists
+      ansible.builtin.stat:
+        path: "{{ postgresql_client_service_file }}"
+      register: service_file
+      failed_when: not service_file.stat.exists
+
+    - name: Verify environment profile is installed
+      ansible.builtin.stat:
+        path: /etc/profile.d/postgresql-env.sh
+      register: env_profile
+      failed_when: not env_profile.stat.exists
+
+    - name: Verify JDBC driver directory exists
+      ansible.builtin.stat:
+        path: "{{ postgresql_jdbc_install_path }}"
+      register: jdbc_dir
+      failed_when: not jdbc_dir.stat.exists
+
+    - name: Display verification summary
+      ansible.builtin.debug:
+        msg: |
+          PostgreSQL Client Verification Summary:
+          - psql Client: {{ (psql_version.rc == 0) | ternary('OK', 'FAILED') }}
+          - Service Config: {{ service_file.stat.exists | ternary('OK', 'FAILED') }}
+          - Environment Profile: {{ env_profile.stat.exists | ternary('OK', 'FAILED') }}
+          - JDBC Directory: {{ jdbc_dir.stat.exists | ternary('OK', 'FAILED') }}

@@ -1,0 +1,118 @@
+---
+# .NET Application Deployment Role - Main Tasks
+# UniCredit GCP Migration
+
+- name: Ensure deployment directory exists
+  ansible.windows.win_file:
+    path: "{{ dotnet_app_deploy_dir }}"
+    state: directory
+  tags: dotnet_app
+
+- name: Ensure backup directory exists
+  ansible.windows.win_file:
+    path: "{{ dotnet_app_backup_dir }}"
+    state: directory
+  when: dotnet_app_backup_enabled
+  tags: dotnet_app
+
+- name: Check if current deployment exists
+  ansible.windows.win_stat:
+    path: "{{ dotnet_app_site_path }}"
+  register: current_deployment
+  tags: dotnet_app
+
+- name: Stop application pool before deployment
+  community.windows.win_iis_webapppool:
+    name: "{{ dotnet_app_pool_name }}"
+    state: stopped
+  when: dotnet_app_stop_before_deploy
+  tags: dotnet_app
+
+- name: Backup current deployment
+  ansible.windows.win_copy:
+    src: "{{ dotnet_app_site_path }}"
+    dest: "{{ dotnet_app_backup_dir }}\\{{ dotnet_app_name }}_{{ ansible_date_time.epoch }}"
+    remote_src: true
+  when:
+    - dotnet_app_backup_enabled
+    - current_deployment.stat.exists
+  tags: dotnet_app
+
+- name: Download application artifact from URL
+  ansible.windows.win_get_url:
+    url: "{{ dotnet_app_artifact_url }}"
+    dest: "{{ dotnet_app_deploy_dir }}\\{{ dotnet_app_artifact_name }}"
+    checksum: "{{ dotnet_app_artifact_checksum | default(omit) }}"
+    checksum_algorithm: "{{ dotnet_app_checksum_algorithm | default('sha256') }}"
+  when: dotnet_app_artifact_url is defined
+  tags: dotnet_app
+
+- name: Copy application artifact from local
+  ansible.windows.win_copy:
+    src: "{{ dotnet_app_local_artifact }}"
+    dest: "{{ dotnet_app_deploy_dir }}\\{{ dotnet_app_artifact_name }}"
+  when: dotnet_app_local_artifact is defined
+  tags: dotnet_app
+
+- name: Extract application archive
+  community.windows.win_unzip:
+    src: "{{ dotnet_app_deploy_dir }}\\{{ dotnet_app_artifact_name }}"
+    dest: "{{ dotnet_app_site_path }}"
+    delete_archive: false
+  when: dotnet_app_artifact_name | regex_search('\\.(zip|nupkg)$')
+  tags: dotnet_app
+
+- name: Deploy web.config
+  ansible.windows.win_template:
+    src: web.config.j2
+    dest: "{{ dotnet_app_site_path }}\\web.config"
+  when: dotnet_app_deploy_webconfig
+  notify: recycle app pool
+  tags: dotnet_app
+
+- name: Deploy appsettings.json
+  ansible.windows.win_template:
+    src: appsettings.json.j2
+    dest: "{{ dotnet_app_site_path }}\\appsettings.json"
+  when: dotnet_app_deploy_appsettings
+  notify: recycle app pool
+  tags: dotnet_app
+
+- name: Set folder permissions
+  ansible.windows.win_acl:
+    path: "{{ dotnet_app_site_path }}"
+    user: "IIS AppPool\\{{ dotnet_app_pool_name }}"
+    rights: ReadAndExecute,ListDirectory
+    type: allow
+    state: present
+    inherit: ContainerInherit, ObjectInherit
+  tags: dotnet_app
+
+- name: Start application pool
+  community.windows.win_iis_webapppool:
+    name: "{{ dotnet_app_pool_name }}"
+    state: started
+  tags: dotnet_app
+
+- name: Verify application health
+  ansible.windows.win_uri:
+    url: "{{ dotnet_app_health_url }}"
+    method: GET
+    status_code: 200
+    timeout: "{{ dotnet_app_health_timeout }}"
+  register: health_check
+  retries: "{{ dotnet_app_health_retries }}"
+  delay: "{{ dotnet_app_health_delay }}"
+  until: health_check.status_code == 200
+  when: dotnet_app_health_check_enabled
+  tags: dotnet_app
+
+- name: Clean up old backups
+  community.windows.win_shell: |
+    $backups = Get-ChildItem -Path "{{ dotnet_app_backup_dir }}" -Directory | Sort-Object CreationTime -Descending | Select-Object -Skip {{ dotnet_app_backup_keep }}
+    $backups | ForEach-Object { Remove-Item -Path $_.FullName -Recurse -Force }
+  when:
+    - dotnet_app_backup_enabled
+    - dotnet_app_backup_cleanup
+  changed_when: false
+  tags: dotnet_app

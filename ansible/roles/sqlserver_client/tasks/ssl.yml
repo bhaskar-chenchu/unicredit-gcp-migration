@@ -1,0 +1,85 @@
+---
+# SQL Server Client SSL Configuration Tasks
+
+- name: Configure SSL certificates (Windows)
+  when: ansible_os_family == 'Windows'
+  block:
+    - name: Create SSL certificate directory
+      ansible.windows.win_file:
+        path: "{{ sqlserver_ssl_cert_dir }}"
+        state: directory
+
+    - name: Copy Cloud SQL server CA certificate
+      ansible.windows.win_copy:
+        src: "{{ sqlserver_ssl_ca_cert_source }}"
+        dest: "{{ sqlserver_ssl_cert_dir }}\\server-ca.cer"
+      when: sqlserver_ssl_ca_cert_source is defined
+
+    - name: Import CA certificate to Windows certificate store
+      ansible.windows.win_shell: |
+        Import-Certificate -FilePath "{{ sqlserver_ssl_cert_dir }}\server-ca.cer" `
+          -CertStoreLocation Cert:\LocalMachine\Root
+      when: sqlserver_ssl_import_to_store | default(true)
+
+    - name: Copy client certificate
+      ansible.windows.win_copy:
+        src: "{{ sqlserver_ssl_client_cert_source }}"
+        dest: "{{ sqlserver_ssl_cert_dir }}\\client-cert.pfx"
+      when: sqlserver_ssl_client_cert_source is defined
+
+    - name: Import client certificate
+      ansible.windows.win_shell: |
+        $password = ConvertTo-SecureString -String "{{ sqlserver_ssl_client_cert_password }}" -AsPlainText -Force
+        Import-PfxCertificate -FilePath "{{ sqlserver_ssl_cert_dir }}\client-cert.pfx" `
+          -CertStoreLocation Cert:\LocalMachine\My `
+          -Password $password
+      when: sqlserver_ssl_client_cert_source is defined
+      no_log: true
+
+- name: Configure SSL certificates (Linux)
+  when: ansible_os_family in ['RedHat', 'Debian']
+  block:
+    - name: Create SSL certificate directory
+      ansible.builtin.file:
+        path: "{{ sqlserver_ssl_cert_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Copy Cloud SQL server CA certificate
+      ansible.builtin.copy:
+        src: "{{ sqlserver_ssl_ca_cert_source }}"
+        dest: "{{ sqlserver_ssl_cert_dir }}/server-ca.pem"
+        mode: '0644'
+      when: sqlserver_ssl_ca_cert_source is defined
+
+    - name: Copy client certificate
+      ansible.builtin.copy:
+        src: "{{ sqlserver_ssl_client_cert_source }}"
+        dest: "{{ sqlserver_ssl_cert_dir }}/client-cert.pem"
+        mode: '0644'
+      when: sqlserver_ssl_client_cert_source is defined
+
+    - name: Copy client private key
+      ansible.builtin.copy:
+        src: "{{ sqlserver_ssl_client_key_source }}"
+        dest: "{{ sqlserver_ssl_cert_dir }}/client-key.pem"
+        mode: '0600'
+      when: sqlserver_ssl_client_key_source is defined
+
+    - name: Update CA certificates (RHEL)
+      ansible.builtin.shell: |
+        cp {{ sqlserver_ssl_cert_dir }}/server-ca.pem /etc/pki/ca-trust/source/anchors/
+        update-ca-trust extract
+      when:
+        - ansible_os_family == 'RedHat'
+        - sqlserver_ssl_update_system_ca | default(false)
+      changed_when: false
+
+    - name: Update CA certificates (Debian)
+      ansible.builtin.shell: |
+        cp {{ sqlserver_ssl_cert_dir }}/server-ca.pem /usr/local/share/ca-certificates/sqlserver-ca.crt
+        update-ca-certificates
+      when:
+        - ansible_os_family == 'Debian'
+        - sqlserver_ssl_update_system_ca | default(false)
+      changed_when: false

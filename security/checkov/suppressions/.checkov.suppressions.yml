@@ -1,0 +1,23 @@
+# Checkov Suppressions for UniCredit GCP Migration
+# Document all suppressions with justification and expiry date
+
+suppressions:
+  # Example suppression format:
+  # - check_id: CKV_GCP_XXX
+  #   resource: google_compute_instance.example
+  #   justification: "Required for legacy application compatibility"
+  #   expiry_date: "2025-06-30"
+  #   approved_by: "security-team@unicredit.example"
+
+  # Temporary suppressions for migration phase
+  # These should be reviewed and removed after migration completion
+
+  # - check_id: CKV_GCP_38
+  #   resource: google_compute_instance_template.legacy_app
+  #   justification: "Legacy application requires specific OS configuration"
+  #   expiry_date: "2025-03-31"
+  #   approved_by: "migration-team"
+
+# Note: All suppressions must be approved by the security team
+# and have a valid expiry date. Suppressions without expiry
+# will be flagged for review.

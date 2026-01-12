@@ -1,0 +1,159 @@
+---
+# WildFly Configuration Role - Main Tasks
+# UniCredit GCP Migration
+
+- name: Include OS-specific variables
+  ansible.builtin.include_vars: "{{ ansible_os_family | lower }}.yml"
+  tags: always
+
+- name: Ensure WildFly group exists
+  ansible.builtin.group:
+    name: "{{ wildfly_group }}"
+    state: present
+    system: true
+  tags: wildfly
+
+- name: Ensure WildFly user exists
+  ansible.builtin.user:
+    name: "{{ wildfly_user }}"
+    group: "{{ wildfly_group }}"
+    home: "{{ wildfly_home }}"
+    shell: /sbin/nologin
+    system: true
+    create_home: false
+  tags: wildfly
+
+- name: Check if WildFly is installed
+  ansible.builtin.stat:
+    path: "{{ wildfly_home }}/bin/standalone.sh"
+  register: wildfly_installed
+  tags: wildfly
+
+- name: Download WildFly
+  ansible.builtin.get_url:
+    url: "{{ wildfly_download_url }}"
+    dest: "/tmp/wildfly-{{ wildfly_version }}.tar.gz"
+    mode: '0644'
+  when: not wildfly_installed.stat.exists
+  tags: wildfly
+
+- name: Extract WildFly
+  ansible.builtin.unarchive:
+    src: "/tmp/wildfly-{{ wildfly_version }}.tar.gz"
+    dest: "{{ wildfly_install_dir }}"
+    remote_src: true
+    creates: "{{ wildfly_install_dir }}/wildfly-{{ wildfly_version }}"
+  when: not wildfly_installed.stat.exists
+  tags: wildfly
+
+- name: Create symlink to WildFly home
+  ansible.builtin.file:
+    src: "{{ wildfly_install_dir }}/wildfly-{{ wildfly_version }}"
+    dest: "{{ wildfly_home }}"
+    state: link
+  when: not wildfly_installed.stat.exists
+  tags: wildfly
+
+- name: Set ownership of WildFly directory
+  ansible.builtin.file:
+    path: "{{ wildfly_install_dir }}/wildfly-{{ wildfly_version }}"
+    owner: "{{ wildfly_user }}"
+    group: "{{ wildfly_group }}"
+    recurse: true
+  tags: wildfly
+
+- name: Create WildFly configuration directory
+  ansible.builtin.file:
+    path: /etc/wildfly
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  tags: wildfly
+
+- name: Deploy WildFly configuration file
+  ansible.builtin.template:
+    src: wildfly.conf.j2
+    dest: /etc/wildfly/wildfly.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart wildfly
+  tags: wildfly
+
+- name: Deploy WildFly systemd service
+  ansible.builtin.template:
+    src: wildfly.service.j2
+    dest: /etc/systemd/system/wildfly.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - reload systemd
+    - restart wildfly
+  tags: wildfly
+
+- name: Deploy WildFly launch script
+  ansible.builtin.template:
+    src: launch.sh.j2
+    dest: "{{ wildfly_home }}/bin/launch.sh"
+    owner: "{{ wildfly_user }}"
+    group: "{{ wildfly_group }}"
+    mode: '0755'
+  notify: restart wildfly
+  tags: wildfly
+
+- name: Configure standalone.xml
+  ansible.builtin.template:
+    src: standalone.xml.j2
+    dest: "{{ wildfly_home }}/standalone/configuration/standalone.xml"
+    owner: "{{ wildfly_user }}"
+    group: "{{ wildfly_group }}"
+    mode: '0644'
+    backup: true
+  notify: restart wildfly
+  tags: wildfly
+  when: wildfly_configure_standalone
+
+- name: Deploy PostgreSQL JDBC driver
+  ansible.builtin.include_tasks: jdbc_driver.yml
+  when: wildfly_install_jdbc_driver
+  tags: wildfly
+
+- name: Configure datasources
+  ansible.builtin.include_tasks: datasource.yml
+  loop: "{{ wildfly_datasources }}"
+  loop_control:
+    loop_var: datasource
+  when: wildfly_datasources | length > 0
+  tags: wildfly
+
+- name: Create log directory
+  ansible.builtin.file:
+    path: "{{ wildfly_log_dir }}"
+    state: directory
+    owner: "{{ wildfly_user }}"
+    group: "{{ wildfly_group }}"
+    mode: '0755'
+  tags: wildfly
+
+- name: Enable and start WildFly service
+  ansible.builtin.systemd:
+    name: wildfly
+    enabled: true
+    state: started
+    daemon_reload: true
+  tags: wildfly
+
+- name: Wait for WildFly to start
+  ansible.builtin.wait_for:
+    port: "{{ wildfly_http_port }}"
+    delay: 10
+    timeout: 120
+  tags: wildfly
+
+- name: Clean up downloaded archive
+  ansible.builtin.file:
+    path: "/tmp/wildfly-{{ wildfly_version }}.tar.gz"
+    state: absent
+  tags: wildfly

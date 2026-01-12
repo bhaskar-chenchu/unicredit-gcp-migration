@@ -1,0 +1,10 @@
+---
+# RedHat/CentOS/RHEL specific variables
+
+wildfly_java_home: /usr/lib/jvm/java-17-openjdk
+wildfly_required_packages:
+  - java-17-openjdk
+  - java-17-openjdk-devel
+  - tar
+  - unzip
+  - wget

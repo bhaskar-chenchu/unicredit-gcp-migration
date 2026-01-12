@@ -1,0 +1,14 @@
+# Example variables file for Windows Server 2022 IIS image
+# Copy to variables.pkrvars.hcl and fill in values
+
+project_id           = "your-gcp-project-id"
+zone                 = "us-central1-a"
+source_image_family  = "windows-2022"
+source_image_project = "windows-cloud"
+machine_type         = "n2-standard-4"
+disk_size            = 100
+dotnet_version       = "4.8"
+image_name_prefix    = "win2022-iis"
+image_family         = "win2022-iis"
+network              = "default"
+subnetwork           = "default"

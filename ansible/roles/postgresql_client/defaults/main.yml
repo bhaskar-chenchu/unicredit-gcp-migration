@@ -1,0 +1,58 @@
+---
+# PostgreSQL Client Role Default Variables
+
+# User and group for configuration files
+postgresql_client_user: root
+postgresql_client_group: root
+
+# Configuration directories
+postgresql_client_config_dir: /etc/postgresql-client
+postgresql_client_pgpass_file: "{{ ansible_env.HOME | default('/root') }}/.pgpass"
+postgresql_client_service_file: "{{ postgresql_client_config_dir }}/pg_service.conf"
+
+# Connection profiles for pgpass
+postgresql_client_connections: []
+# Example:
+# postgresql_client_connections:
+#   - host: db.example.com
+#     port: 5432
+#     database: mydb
+#     user: myuser
+#     password: mypassword
+
+# Service definitions for pg_service.conf
+postgresql_client_services: []
+# Example:
+# postgresql_client_services:
+#   - name: mydb
+#     host: db.example.com
+#     port: 5432
+#     dbname: mydb
+#     user: myuser
+
+# Environment variables
+postgresql_client_default_host: localhost
+postgresql_client_default_port: 5432
+
+# JDBC Driver
+postgresql_client_install_jdbc: true
+postgresql_jdbc_version: "42.7.1"
+postgresql_jdbc_download_url: "https://jdbc.postgresql.org/download/postgresql-{{ postgresql_jdbc_version }}.jar"
+postgresql_jdbc_install_path: /opt/jdbc
+
+# SSL Configuration
+postgresql_client_ssl_enabled: false
+postgresql_client_ssl_dir: "{{ ansible_env.HOME | default('/root') }}/.postgresql"
+postgresql_client_ssl_mode: verify-full
+# postgresql_client_ssl_ca_cert: |
+#   -----BEGIN CERTIFICATE-----
+#   ...
+#   -----END CERTIFICATE-----
+
+# Connection Testing
+postgresql_client_test_connection: false
+postgresql_client_test_host: localhost
+postgresql_client_test_port: 5432
+postgresql_client_test_database: postgres
+postgresql_client_test_user: postgres
+postgresql_client_test_password: ""

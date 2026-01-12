@@ -1,0 +1,60 @@
+---
+# Molecule Verify Playbook for IIS Role
+
+- name: Verify IIS Installation
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Verify IIS Windows Feature is installed
+      ansible.windows.win_feature:
+        name: Web-Server
+        state: present
+      check_mode: true
+      register: iis_feature
+      failed_when: iis_feature.changed
+
+    - name: Verify W3SVC service is running
+      ansible.windows.win_service:
+        name: W3SVC
+        state: started
+      check_mode: true
+      register: w3svc_service
+      failed_when: w3svc_service.changed
+
+    - name: Get IIS Sites
+      ansible.windows.win_shell: |
+        Import-Module WebAdministration
+        Get-Website | Select-Object Name, State | ConvertTo-Json
+      register: iis_sites
+      changed_when: false
+
+    - name: Get IIS Application Pools
+      ansible.windows.win_shell: |
+        Import-Module WebAdministration
+        Get-IISAppPool | Select-Object Name, State | ConvertTo-Json
+      register: iis_app_pools
+      changed_when: false
+
+    - name: Verify test site exists
+      ansible.windows.win_shell: |
+        Import-Module WebAdministration
+        if (Get-Website -Name "TestSite") { exit 0 } else { exit 1 }
+      register: test_site
+      failed_when: test_site.rc != 0
+
+    - name: Verify test app pool exists
+      ansible.windows.win_shell: |
+        Import-Module WebAdministration
+        if (Get-IISAppPool -Name "TestAppPool") { exit 0 } else { exit 1 }
+      register: test_app_pool
+      failed_when: test_app_pool.rc != 0
+
+    - name: Display verification summary
+      ansible.builtin.debug:
+        msg: |
+          IIS Verification Summary:
+          - IIS Feature Installed: {{ not iis_feature.changed | ternary('OK', 'FAILED') }}
+          - W3SVC Service Running: {{ not w3svc_service.changed | ternary('OK', 'FAILED') }}
+          - Test Site Exists: {{ (test_site.rc == 0) | ternary('OK', 'FAILED') }}
+          - Test App Pool Exists: {{ (test_app_pool.rc == 0) | ternary('OK', 'FAILED') }}

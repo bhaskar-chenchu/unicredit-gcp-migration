@@ -1,0 +1,75 @@
+---
+# SQL Server Client Role - Default Variables
+
+# ODBC Driver Configuration
+sqlserver_odbc_driver_name: "ODBC Driver 18 for SQL Server"
+sqlserver_odbc_driver_version: ""  # Empty for latest
+
+# Windows-specific settings
+sqlserver_use_chocolatey: true
+sqlserver_odbc_driver_package: "sqlserver-odbcdriver"
+sqlserver_cmdline_tools_package: "sqlserver-cmdlineutils"
+sqlserver_install_cmdline_tools: true
+sqlserver_install_sqlclient: false
+sqlserver_temp_dir: "C:\\Temp"
+sqlserver_connection_strings_dir: "C:\\ProgramData\\SqlServer"
+
+# ODBC DSN entries (empty by default)
+# Example:
+# sqlserver_odbc_dsn_entries:
+#   - name: CloudSQL_AppB
+#     server: 10.0.0.5
+#     database: appb_db
+#     dsn_type: System  # User or System
+#     encrypt: "yes"
+#     trust_cert: "no"
+sqlserver_odbc_dsn_entries: []
+
+# SQL Server connections for connection strings
+# Example:
+# sqlserver_connections:
+#   - name: AppBConnection
+#     server: 10.0.0.5
+#     database: appb_db
+#     user: appb_user
+#     integrated_security: false
+#     encrypt: true
+#     trust_server_certificate: false
+sqlserver_connections: []
+
+# Stored credentials for Windows Credential Manager
+# Example:
+# sqlserver_stored_credentials:
+#   - server: 10.0.0.5
+#     user: appb_user
+#     password: "secret"
+sqlserver_stored_credentials: []
+
+# JDBC Driver Configuration (for Java applications on Linux)
+sqlserver_install_jdbc_driver: true
+sqlserver_jdbc_version: "12.6.1"
+sqlserver_jdbc_jre_version: "17"  # Options: 8, 11, 17
+sqlserver_jdbc_download_url: "https://download.microsoft.com/download/7/4/f/74f0ae4d-6a94-4148-9dee-b9be5c00f5fa/sqljdbc_{{ sqlserver_jdbc_version }}_enu.tar.gz"
+sqlserver_jdbc_install_path: "/opt/microsoft/jdbc"
+sqlserver_jdbc_temp_path: "/tmp/sqljdbc.tar.gz"
+
+# Linux-specific ODBC configuration
+sqlserver_odbc_config_dir: "/etc/odbc"
+sqlserver_odbc_ini_path: "/etc/odbc.ini"
+
+# SSL/TLS Configuration
+sqlserver_ssl_enabled: false
+sqlserver_ssl_cert_dir: "{{ 'C:\\ProgramData\\SqlServer\\certs' if ansible_os_family == 'Windows' else '/etc/sqlserver/certs' }}"
+sqlserver_ssl_import_to_store: true
+sqlserver_ssl_update_system_ca: false
+
+# Connection Testing
+sqlserver_test_connection: false
+sqlserver_test_server: ""
+sqlserver_test_user: ""
+sqlserver_test_password: ""
+
+# Cloud SQL specific settings
+cloudsql_instance_connection_name: ""
+cloudsql_use_private_ip: true
+cloudsql_proxy_enabled: false

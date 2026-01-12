@@ -1,0 +1,27 @@
+---
+# PostgreSQL Client Role Metadata
+
+galaxy_info:
+  author: UniCredit Migration Team
+  description: PostgreSQL client configuration and JDBC driver installation
+  license: MIT
+  min_ansible_version: "2.15"
+
+  platforms:
+    - name: EL
+      versions:
+        - "9"
+    - name: Rocky
+      versions:
+        - "9"
+    - name: AlmaLinux
+      versions:
+        - "9"
+
+  galaxy_tags:
+    - postgresql
+    - database
+    - client
+    - jdbc
+
+dependencies: []

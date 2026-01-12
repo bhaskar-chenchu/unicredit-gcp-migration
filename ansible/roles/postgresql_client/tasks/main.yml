@@ -1,0 +1,95 @@
+---
+# PostgreSQL Client Role - Main Tasks
+# UniCredit GCP Migration
+
+- name: Include OS-specific variables
+  ansible.builtin.include_vars: "{{ ansible_os_family | lower }}.yml"
+  tags: postgresql_client
+
+- name: Install PostgreSQL client packages
+  ansible.builtin.package:
+    name: "{{ postgresql_client_packages }}"
+    state: present
+  tags: postgresql_client
+
+- name: Create PostgreSQL configuration directory
+  ansible.builtin.file:
+    path: "{{ postgresql_client_config_dir }}"
+    state: directory
+    owner: "{{ postgresql_client_user }}"
+    group: "{{ postgresql_client_group }}"
+    mode: '0755'
+  tags: postgresql_client
+
+- name: Deploy pgpass file for passwordless authentication
+  ansible.builtin.template:
+    src: pgpass.j2
+    dest: "{{ postgresql_client_pgpass_file }}"
+    owner: "{{ postgresql_client_user }}"
+    group: "{{ postgresql_client_group }}"
+    mode: '0600'
+  when: postgresql_client_connections | length > 0
+  tags: postgresql_client
+
+- name: Deploy pg_service.conf for connection profiles
+  ansible.builtin.template:
+    src: pg_service.conf.j2
+    dest: "{{ postgresql_client_service_file }}"
+    owner: "{{ postgresql_client_user }}"
+    group: "{{ postgresql_client_group }}"
+    mode: '0644'
+  when: postgresql_client_services | length > 0
+  tags: postgresql_client
+
+- name: Set environment variables for PostgreSQL
+  ansible.builtin.template:
+    src: postgresql-env.sh.j2
+    dest: /etc/profile.d/postgresql.sh
+    owner: root
+    group: root
+    mode: '0644'
+  tags: postgresql_client
+
+- name: Download PostgreSQL JDBC driver
+  ansible.builtin.get_url:
+    url: "{{ postgresql_jdbc_download_url }}"
+    dest: "{{ postgresql_jdbc_install_path }}/postgresql-{{ postgresql_jdbc_version }}.jar"
+    owner: "{{ postgresql_client_user }}"
+    group: "{{ postgresql_client_group }}"
+    mode: '0644'
+  when: postgresql_client_install_jdbc
+  tags: postgresql_client
+
+- name: Create symlink for JDBC driver
+  ansible.builtin.file:
+    src: "{{ postgresql_jdbc_install_path }}/postgresql-{{ postgresql_jdbc_version }}.jar"
+    dest: "{{ postgresql_jdbc_install_path }}/postgresql-jdbc.jar"
+    state: link
+  when: postgresql_client_install_jdbc
+  tags: postgresql_client
+
+- name: Configure SSL certificates for PostgreSQL
+  ansible.builtin.include_tasks: ssl.yml
+  when: postgresql_client_ssl_enabled
+  tags: postgresql_client
+
+- name: Test PostgreSQL connection
+  ansible.builtin.command: >
+    psql -h {{ postgresql_client_test_host }}
+         -p {{ postgresql_client_test_port }}
+         -U {{ postgresql_client_test_user }}
+         -d {{ postgresql_client_test_database }}
+         -c "SELECT 1"
+  environment:
+    PGPASSWORD: "{{ postgresql_client_test_password }}"
+  register: pg_connection_test
+  changed_when: false
+  failed_when: false
+  when: postgresql_client_test_connection
+  tags: postgresql_client
+
+- name: Display connection test result
+  ansible.builtin.debug:
+    msg: "PostgreSQL connection test {{ 'succeeded' if pg_connection_test.rc == 0 else 'failed' }}"
+  when: postgresql_client_test_connection
+  tags: postgresql_client

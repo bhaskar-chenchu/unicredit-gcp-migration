@@ -1,0 +1,55 @@
+---
+# Molecule Configuration for .NET App Deployment Role
+# Note: This requires a Windows host with IIS for testing.
+# Uses delegated driver for Windows testing scenarios.
+
+dependency:
+  name: galaxy
+
+driver:
+  name: delegated
+  options:
+    managed: false
+    ansible_connection_options:
+      ansible_connection: winrm
+      ansible_winrm_transport: ntlm
+      ansible_winrm_server_cert_validation: ignore
+
+platforms:
+  - name: windows-dotnet-test
+    groups:
+      - windows
+
+provisioner:
+  name: ansible
+  env:
+    ANSIBLE_ROLES_PATH: ../../../
+  connection_options:
+    ansible_connection: winrm
+    ansible_winrm_transport: ntlm
+  inventory:
+    host_vars:
+      windows-dotnet-test:
+        ansible_host: "${MOLECULE_WINDOWS_HOST:-localhost}"
+        ansible_user: "${MOLECULE_WINDOWS_USER:-Administrator}"
+        ansible_password: "${MOLECULE_WINDOWS_PASSWORD:-}"
+        dotnet_app_name: TestDotNetApp
+        dotnet_app_site_name: TestSite
+        dotnet_app_pool_name: TestAppPool
+        dotnet_app_physical_path: C:\inetpub\wwwroot\testsite\testapp
+        dotnet_app_healthcheck_enabled: false
+
+verifier:
+  name: ansible
+
+scenario:
+  name: default
+  test_sequence:
+    - dependency
+    - syntax
+    - create
+    - prepare
+    - converge
+    - verify
+    - cleanup
+    - destroy

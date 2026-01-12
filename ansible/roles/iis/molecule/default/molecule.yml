@@ -1,0 +1,59 @@
+---
+# Molecule Configuration for IIS Role
+# Note: This requires a Windows host for testing.
+# Uses delegated driver for Windows testing scenarios.
+
+dependency:
+  name: galaxy
+
+driver:
+  name: delegated
+  options:
+    managed: false
+    ansible_connection_options:
+      ansible_connection: winrm
+      ansible_winrm_transport: ntlm
+      ansible_winrm_server_cert_validation: ignore
+
+platforms:
+  - name: windows-iis-test
+    groups:
+      - windows
+
+provisioner:
+  name: ansible
+  env:
+    ANSIBLE_ROLES_PATH: ../../../
+  connection_options:
+    ansible_connection: winrm
+    ansible_winrm_transport: ntlm
+  inventory:
+    host_vars:
+      windows-iis-test:
+        ansible_host: "${MOLECULE_WINDOWS_HOST:-localhost}"
+        ansible_user: "${MOLECULE_WINDOWS_USER:-Administrator}"
+        ansible_password: "${MOLECULE_WINDOWS_PASSWORD:-}"
+        iis_sites:
+          - name: TestSite
+            physical_path: C:\inetpub\wwwroot\testsite
+            port: 8080
+            app_pool: TestAppPool
+        iis_app_pools:
+          - name: TestAppPool
+            dotnet_version: v4.0
+            managed_pipeline_mode: Integrated
+
+verifier:
+  name: ansible
+
+scenario:
+  name: default
+  test_sequence:
+    - dependency
+    - syntax
+    - create
+    - prepare
+    - converge
+    - verify
+    - cleanup
+    - destroy

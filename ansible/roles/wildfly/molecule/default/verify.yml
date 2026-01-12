@@ -1,0 +1,72 @@
+---
+# Molecule Verify Playbook for WildFly Role
+
+- name: Verify WildFly Installation
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    wildfly_home: /opt/wildfly
+    wildfly_user: wildfly
+    wildfly_group: wildfly
+    wildfly_http_port: 8080
+    wildfly_management_port: 9990
+
+  tasks:
+    - name: Verify WildFly user exists
+      ansible.builtin.user:
+        name: "{{ wildfly_user }}"
+        state: present
+      check_mode: true
+      register: user_check
+      failed_when: user_check.changed
+
+    - name: Verify WildFly installation directory exists
+      ansible.builtin.stat:
+        path: "{{ wildfly_home }}"
+      register: wildfly_dir
+      failed_when: not wildfly_dir.stat.exists or not wildfly_dir.stat.isdir
+
+    - name: Verify WildFly standalone.xml exists
+      ansible.builtin.stat:
+        path: "{{ wildfly_home }}/standalone/configuration/standalone.xml"
+      register: standalone_config
+      failed_when: not standalone_config.stat.exists
+
+    - name: Verify WildFly service unit file exists
+      ansible.builtin.stat:
+        path: /etc/systemd/system/wildfly.service
+      register: service_file
+      failed_when: not service_file.stat.exists
+
+    - name: Verify WildFly service is enabled
+      ansible.builtin.systemd:
+        name: wildfly
+        enabled: true
+      check_mode: true
+      register: service_enabled
+      failed_when: service_enabled.changed
+
+    - name: Check WildFly service status
+      ansible.builtin.systemd:
+        name: wildfly
+        state: started
+      check_mode: true
+      register: service_status
+      ignore_errors: true
+
+    - name: Verify JDBC driver is installed
+      ansible.builtin.stat:
+        path: "{{ wildfly_home }}/modules/org/postgresql/main/postgresql-jdbc.jar"
+      register: jdbc_driver
+
+    - name: Display verification summary
+      ansible.builtin.debug:
+        msg: |
+          WildFly Verification Summary:
+          - Installation Directory: {{ wildfly_dir.stat.exists | ternary('OK', 'FAILED') }}
+          - Configuration File: {{ standalone_config.stat.exists | ternary('OK', 'FAILED') }}
+          - Service Unit File: {{ service_file.stat.exists | ternary('OK', 'FAILED') }}
+          - Service Enabled: {{ not service_enabled.changed | ternary('OK', 'FAILED') }}
+          - JDBC Driver: {{ jdbc_driver.stat.exists | default(false) | ternary('OK', 'NOT FOUND') }}

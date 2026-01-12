@@ -1,0 +1,18 @@
+---
+# Molecule Converge Playbook for WildFly Role
+
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Install required packages for testing
+      ansible.builtin.package:
+        name:
+          - python3
+          - java-17-openjdk
+          - java-17-openjdk-devel
+        state: present
+
+  roles:
+    - role: wildfly

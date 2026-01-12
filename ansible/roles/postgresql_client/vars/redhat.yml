@@ -1,0 +1,6 @@
+---
+# RedHat/CentOS/RHEL specific variables
+
+postgresql_client_packages:
+  - postgresql
+  - postgresql-libs

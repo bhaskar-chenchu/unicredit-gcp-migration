@@ -1,0 +1,22 @@
+---
+# .NET Application Role Handlers
+
+- name: recycle app pool
+  community.windows.win_iis_webapppool:
+    name: "{{ dotnet_app_pool_name }}"
+    state: restarted
+
+- name: stop app pool
+  community.windows.win_iis_webapppool:
+    name: "{{ dotnet_app_pool_name }}"
+    state: stopped
+
+- name: start app pool
+  community.windows.win_iis_webapppool:
+    name: "{{ dotnet_app_pool_name }}"
+    state: started
+
+- name: restart iis
+  ansible.windows.win_service:
+    name: W3SVC
+    state: restarted

@@ -1,0 +1,22 @@
+---
+# WildFly Role Handlers
+
+- name: reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: restart wildfly
+  ansible.builtin.systemd:
+    name: wildfly
+    state: restarted
+  when: wildfly_restart_on_change | default(true)
+
+- name: stop wildfly
+  ansible.builtin.systemd:
+    name: wildfly
+    state: stopped
+
+- name: start wildfly
+  ansible.builtin.systemd:
+    name: wildfly
+    state: started

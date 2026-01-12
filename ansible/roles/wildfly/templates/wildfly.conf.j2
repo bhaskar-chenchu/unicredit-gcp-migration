@@ -1,0 +1,20 @@
+# WildFly Configuration File
+# Managed by Ansible - Do not edit manually
+
+# Java Home
+JAVA_HOME={{ wildfly_java_home }}
+
+# WildFly Mode
+WILDFLY_MODE={{ wildfly_mode }}
+
+# WildFly Configuration
+WILDFLY_CONFIG={{ wildfly_config }}
+
+# Bind Address
+WILDFLY_BIND={{ wildfly_bind_address }}
+
+# Console Log
+WILDFLY_CONSOLE_LOG={{ wildfly_console_log }}
+
+# Additional Java Options
+JAVA_OPTS="{{ wildfly_java_opts }}"

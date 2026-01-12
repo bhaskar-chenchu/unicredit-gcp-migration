@@ -1,0 +1,31 @@
+---
+# Molecule Verify Playbook for Java App Deployment Role
+
+- name: Verify Java App Deployment
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    java_app_name: testapp
+    java_app_deploy_dir: /opt/wildfly/standalone/deployments
+
+  tasks:
+    - name: Verify WAR file is deployed
+      ansible.builtin.stat:
+        path: "{{ java_app_deploy_dir }}/{{ java_app_name }}.war"
+      register: war_file
+      failed_when: not war_file.stat.exists
+
+    - name: Verify deployment marker file exists
+      ansible.builtin.stat:
+        path: "{{ java_app_deploy_dir }}/{{ java_app_name }}.war.deployed"
+      register: deployed_marker
+      ignore_errors: true
+
+    - name: Display verification summary
+      ansible.builtin.debug:
+        msg: |
+          Java App Deployment Verification Summary:
+          - WAR File Deployed: {{ war_file.stat.exists | ternary('OK', 'FAILED') }}
+          - Deployment Marker: {{ deployed_marker.stat.exists | default(false) | ternary('OK', 'PENDING') }}

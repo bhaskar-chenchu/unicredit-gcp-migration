@@ -1,0 +1,120 @@
+---
+# IIS Configuration Role - Main Tasks
+# UniCredit GCP Migration
+
+- name: Install IIS feature
+  ansible.windows.win_feature:
+    name: "{{ item }}"
+    state: present
+    include_management_tools: true
+  loop: "{{ iis_features }}"
+  tags: iis
+
+- name: Install .NET Framework features
+  ansible.windows.win_feature:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ dotnet_features }}"
+  tags: iis
+
+- name: Ensure IIS service is running
+  ansible.windows.win_service:
+    name: W3SVC
+    state: started
+    start_mode: auto
+  tags: iis
+
+- name: Create application directories
+  ansible.windows.win_file:
+    path: "{{ item }}"
+    state: directory
+  loop:
+    - "{{ iis_app_root }}"
+    - "{{ iis_log_dir }}"
+    - "{{ iis_temp_dir }}"
+  tags: iis
+
+- name: Configure application pools
+  ansible.windows.win_iis_webbinding:
+    name: "{{ item.name }}"
+    state: present
+  loop: "{{ iis_app_pools }}"
+  when: iis_app_pools | length > 0
+  tags: iis
+
+- name: Create application pools
+  community.windows.win_iis_webapppool:
+    name: "{{ item.name }}"
+    state: started
+    attributes:
+      managedRuntimeVersion: "{{ item.runtime_version | default('v4.0') }}"
+      managedPipelineMode: "{{ item.pipeline_mode | default('Integrated') }}"
+      startMode: "{{ item.start_mode | default('OnDemand') }}"
+      processModel.identityType: "{{ item.identity_type | default('ApplicationPoolIdentity') }}"
+      processModel.idleTimeout: "{{ item.idle_timeout | default('00:20:00') }}"
+      recycling.periodicRestart.time: "{{ item.recycle_time | default('00:00:00') }}"
+  loop: "{{ iis_app_pools }}"
+  tags: iis
+
+- name: Remove default website if requested
+  community.windows.win_iis_website:
+    name: "Default Web Site"
+    state: absent
+  when: iis_remove_default_site
+  tags: iis
+
+- name: Create websites
+  community.windows.win_iis_website:
+    name: "{{ item.name }}"
+    state: started
+    port: "{{ item.port | default(80) }}"
+    ip: "{{ item.ip | default('*') }}"
+    hostname: "{{ item.hostname | default('') }}"
+    physical_path: "{{ item.physical_path }}"
+    application_pool: "{{ item.app_pool }}"
+  loop: "{{ iis_sites }}"
+  when: iis_sites | length > 0
+  tags: iis
+
+- name: Configure HTTPS bindings
+  community.windows.win_iis_webbinding:
+    name: "{{ item.site_name }}"
+    protocol: https
+    port: "{{ item.https_port | default(443) }}"
+    certificate_hash: "{{ item.cert_hash }}"
+    certificate_store_name: "{{ item.cert_store | default('My') }}"
+    state: present
+  loop: "{{ iis_https_bindings }}"
+  when: iis_https_bindings | length > 0
+  tags: iis
+
+- name: Configure IIS logging
+  community.windows.win_iis_website:
+    name: "{{ item.name }}"
+    parameters:
+      logFile.directory: "{{ iis_log_dir }}"
+      logFile.logFormat: "{{ iis_log_format }}"
+      logFile.period: "{{ iis_log_period }}"
+  loop: "{{ iis_sites }}"
+  when: iis_sites | length > 0
+  tags: iis
+
+- name: Set folder permissions for app pool identity
+  ansible.windows.win_acl:
+    path: "{{ item.physical_path }}"
+    user: "IIS AppPool\\{{ item.app_pool }}"
+    rights: ReadAndExecute,ListDirectory
+    type: allow
+    state: present
+    inherit: ContainerInherit, ObjectInherit
+  loop: "{{ iis_sites }}"
+  when: iis_sites | length > 0
+  tags: iis
+
+- name: Configure request filtering
+  community.windows.win_shell: |
+    Import-Module WebAdministration
+    Set-WebConfigurationProperty -Filter /system.webServer/security/requestFiltering `
+      -Name allowDoubleEscaping -Value {{ iis_allow_double_escaping | lower }} -PSPath "IIS:\"
+  tags: iis
+  when: iis_configure_request_filtering

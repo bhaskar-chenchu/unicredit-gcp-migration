@@ -1,0 +1,17 @@
+---
+# Molecule Converge Playbook for SQL Server Client Role
+
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Install prerequisite packages
+      ansible.builtin.dnf:
+        name:
+          - curl
+          - gnupg2
+        state: present
+
+  roles:
+    - role: sqlserver_client

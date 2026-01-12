@@ -1,0 +1,11 @@
+#!/bin/bash
+# PostgreSQL Environment Variables
+# Managed by Ansible - Do not edit manually
+
+export PGHOST="{{ postgresql_client_default_host }}"
+export PGPORT="{{ postgresql_client_default_port }}"
+export PGSERVICEFILE="{{ postgresql_client_service_file }}"
+{% if postgresql_client_ssl_enabled %}
+export PGSSLMODE="{{ postgresql_client_ssl_mode }}"
+export PGSSLROOTCERT="{{ postgresql_client_ssl_dir }}/root.crt"
+{% endif %}

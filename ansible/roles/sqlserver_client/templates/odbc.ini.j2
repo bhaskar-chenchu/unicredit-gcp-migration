@@ -1,0 +1,20 @@
+# ODBC Data Source Configuration
+# Managed by Ansible - Do not edit manually
+{% for dsn in sqlserver_odbc_dsn_entries %}
+
+[{{ dsn.name }}]
+Driver = {{ sqlserver_odbc_driver_name }}
+Server = {{ dsn.server }}
+Database = {{ dsn.database }}
+{% if dsn.port is defined %}
+Port = {{ dsn.port }}
+{% endif %}
+Encrypt = {{ dsn.encrypt | default('yes') }}
+TrustServerCertificate = {{ dsn.trust_cert | default('no') }}
+{% if dsn.application_intent is defined %}
+ApplicationIntent = {{ dsn.application_intent }}
+{% endif %}
+{% if dsn.multi_subnet_failover is defined %}
+MultiSubnetFailover = {{ dsn.multi_subnet_failover }}
+{% endif %}
+{% endfor %}

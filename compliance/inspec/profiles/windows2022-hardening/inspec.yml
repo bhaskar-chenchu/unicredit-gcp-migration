@@ -1,0 +1,75 @@
+name: windows2022-hardening
+title: Windows Server 2022 CIS Benchmark Hardening Profile
+maintainer: UniCredit Migration Team
+copyright: UniCredit
+copyright_email: migration-team@unicredit.example.com
+license: MIT
+summary: CIS Benchmark-aligned hardening controls for Windows Server 2022
+version: 1.0.0
+
+supports:
+  - platform-name: windows
+    release: 2022*
+
+depends:
+  - name: unicredit-baseline
+    path: ../unicredit-baseline
+
+inputs:
+  - name: min_password_length
+    type: Numeric
+    value: 14
+    description: Minimum password length
+
+  - name: password_history_size
+    type: Numeric
+    value: 24
+    description: Number of passwords to remember
+
+  - name: max_password_age
+    type: Numeric
+    value: 60
+    description: Maximum password age in days
+
+  - name: lockout_threshold
+    type: Numeric
+    value: 5
+    description: Account lockout threshold
+
+  - name: lockout_duration
+    type: Numeric
+    value: 15
+    description: Account lockout duration in minutes
+
+  - name: audit_log_retention_days
+    type: Numeric
+    value: 90
+    description: Audit log retention period
+
+  - name: unnecessary_features
+    type: Array
+    value:
+      - Telnet-Client
+      - TFTP-Client
+      - SMB1Protocol
+      - PowerShell-V2
+    description: Windows features that should be disabled
+
+  - name: unnecessary_services
+    type: Array
+    value:
+      - Browser
+      - IISADMIN
+      - irmon
+      - SharedAccess
+      - SSDPSRV
+      - upnphost
+      - WMSvc
+      - WMPNetworkSvc
+      - icssvc
+      - WpcMonSvc
+      - XboxGipSvc
+      - XblAuthManager
+      - XblGameSave
+      - XboxNetApiSvc
+    description: Services that should be disabled

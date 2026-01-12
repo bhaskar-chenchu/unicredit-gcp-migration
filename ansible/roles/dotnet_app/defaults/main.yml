@@ -1,0 +1,46 @@
+---
+# .NET Application Deployment Role Defaults
+
+# Application details
+dotnet_app_name: myapp
+dotnet_app_artifact_name: "{{ dotnet_app_name }}.zip"
+
+# Artifact source (use either URL or local path)
+# dotnet_app_artifact_url: https://nexus.example.com/repository/releases/myapp/1.0.0/myapp-1.0.0.zip
+# dotnet_app_local_artifact: files/myapp.zip
+# dotnet_app_artifact_checksum: abc123...
+# dotnet_app_checksum_algorithm: sha256
+
+# Deployment directories
+dotnet_app_deploy_dir: C:\Deployments
+dotnet_app_backup_dir: C:\Deployments\Backup
+dotnet_app_site_path: C:\inetpub\apps\{{ dotnet_app_name }}
+
+# IIS settings
+dotnet_app_pool_name: "{{ dotnet_app_name }}Pool"
+dotnet_app_site_name: "{{ dotnet_app_name }}"
+
+# Deployment options
+dotnet_app_stop_before_deploy: true
+
+# Configuration deployment
+dotnet_app_deploy_webconfig: false
+dotnet_app_deploy_appsettings: false
+
+# Backup options
+dotnet_app_backup_enabled: true
+dotnet_app_backup_cleanup: true
+dotnet_app_backup_keep: 5
+
+# Health check
+dotnet_app_health_check_enabled: true
+dotnet_app_health_url: "http://localhost/{{ dotnet_app_name }}/health"
+dotnet_app_health_timeout: 30
+dotnet_app_health_retries: 10
+dotnet_app_health_delay: 10
+
+# Database connection (for templates)
+dotnet_app_db_server: localhost
+dotnet_app_db_name: "{{ dotnet_app_name }}"
+dotnet_app_db_user: appuser
+dotnet_app_db_password: ""

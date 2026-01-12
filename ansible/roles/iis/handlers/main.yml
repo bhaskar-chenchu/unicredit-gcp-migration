@@ -1,0 +1,22 @@
+---
+# IIS Role Handlers
+
+- name: restart iis
+  ansible.windows.win_service:
+    name: W3SVC
+    state: restarted
+
+- name: stop iis
+  ansible.windows.win_service:
+    name: W3SVC
+    state: stopped
+
+- name: start iis
+  ansible.windows.win_service:
+    name: W3SVC
+    state: started
+
+- name: recycle app pool
+  community.windows.win_shell: |
+    Import-Module WebAdministration
+    Restart-WebAppPool -Name "{{ app_pool_name }}"

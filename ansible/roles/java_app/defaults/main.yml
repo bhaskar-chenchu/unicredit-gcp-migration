@@ -1,0 +1,45 @@
+---
+# Java Application Deployment Role Defaults
+
+# Application details
+java_app_name: myapp
+java_app_artifact_name: "{{ java_app_name }}.war"
+
+# Artifact source (use either URL or local path)
+# java_app_artifact_url: https://nexus.example.com/repository/releases/com/example/myapp/1.0.0/myapp-1.0.0.war
+# java_app_local_artifact: files/myapp.war
+# java_app_artifact_checksum: sha256:abc123...
+
+# Deployment directories
+java_app_deploy_dir: /opt/deployments
+java_app_backup_dir: /opt/deployments/backup
+wildfly_deployments_dir: /opt/wildfly/standalone/deployments
+
+# User and group
+java_app_user: wildfly
+java_app_group: wildfly
+
+# Deployment options
+java_app_deploy_to_wildfly: true
+java_app_deploy_timeout: 120
+java_app_restart_on_deploy: false
+
+# Backup options
+java_app_backup_enabled: true
+java_app_backup_cleanup: true
+java_app_backup_keep: 5
+
+# Health check
+java_app_health_check_enabled: true
+java_app_health_url: "http://localhost:8080/{{ java_app_name }}/health"
+java_app_health_timeout: 30
+java_app_health_retries: 10
+java_app_health_delay: 10
+
+# Configuration files to deploy
+java_app_config_files: []
+# Example:
+# java_app_config_files:
+#   - src: application.properties.j2
+#     dest: /opt/wildfly/standalone/configuration/application.properties
+#     mode: '0600'

@@ -1,0 +1,38 @@
+---
+# PostgreSQL SSL Configuration Tasks
+
+- name: Create SSL directory
+  ansible.builtin.file:
+    path: "{{ postgresql_client_ssl_dir }}"
+    state: directory
+    owner: "{{ postgresql_client_user }}"
+    group: "{{ postgresql_client_group }}"
+    mode: '0700'
+
+- name: Deploy CA certificate
+  ansible.builtin.copy:
+    content: "{{ postgresql_client_ssl_ca_cert }}"
+    dest: "{{ postgresql_client_ssl_dir }}/root.crt"
+    owner: "{{ postgresql_client_user }}"
+    group: "{{ postgresql_client_group }}"
+    mode: '0600'
+  when: postgresql_client_ssl_ca_cert is defined
+
+- name: Deploy client certificate
+  ansible.builtin.copy:
+    content: "{{ postgresql_client_ssl_cert }}"
+    dest: "{{ postgresql_client_ssl_dir }}/postgresql.crt"
+    owner: "{{ postgresql_client_user }}"
+    group: "{{ postgresql_client_group }}"
+    mode: '0600'
+  when: postgresql_client_ssl_cert is defined
+
+- name: Deploy client key
+  ansible.builtin.copy:
+    content: "{{ postgresql_client_ssl_key }}"
+    dest: "{{ postgresql_client_ssl_dir }}/postgresql.key"
+    owner: "{{ postgresql_client_user }}"
+    group: "{{ postgresql_client_group }}"
+    mode: '0600'
+  when: postgresql_client_ssl_key is defined
+  no_log: true

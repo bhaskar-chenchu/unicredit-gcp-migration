@@ -1,0 +1,15 @@
+---
+# Molecule Converge Playbook for PostgreSQL Client Role
+
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Install EPEL repository
+      ansible.builtin.dnf:
+        name: epel-release
+        state: present
+
+  roles:
+    - role: postgresql_client

@@ -1,0 +1,54 @@
+# Checkov Configuration for UniCredit GCP Migration
+# https://www.checkov.io/2.Basics/CLI%20Command%20Reference.html
+
+# Directories to scan
+directory:
+  - terraform/modules
+  - terraform/environments
+
+# Framework to use
+framework:
+  - terraform
+  - terraform_plan
+
+# Output format
+output:
+  - cli
+  - json
+  - junitxml
+
+# Output file paths
+output-file-path: security/reports
+
+# Custom policies directory
+external-checks-dir:
+  - security/checkov/custom-policies
+
+# Severity threshold (fail on HIGH and CRITICAL)
+check-severity:
+  - HIGH
+  - CRITICAL
+
+# Skip specific checks (with justification)
+skip-check:
+  # Skip if using managed services that don't support certain features
+  # - CKV_GCP_XXX
+
+# Compact output
+compact: true
+
+# Enable secrets scanning
+enable-secret-scan-all-files: true
+
+# Baseline file for existing issues
+baseline: security/checkov/baseline/checkov-baseline.json
+
+# Soft fail (don't exit with error code, for initial adoption)
+soft-fail: false
+
+# Download external modules
+download-external-modules: true
+
+# Variable files
+var-file:
+  - terraform/environments/dev/terraform.tfvars

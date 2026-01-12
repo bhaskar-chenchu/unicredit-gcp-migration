@@ -1,0 +1,23 @@
+---
+# Molecule Converge Playbook for .NET App Deployment Role
+
+- name: Converge
+  hosts: all
+  gather_facts: true
+
+  pre_tasks:
+    - name: Create test application directory
+      ansible.windows.win_file:
+        path: C:\Temp\TestApp
+        state: directory
+
+    - name: Create mock application package
+      ansible.windows.win_copy:
+        content: "Test .NET Application Package"
+        dest: C:\Temp\TestApp\web.config
+
+  roles:
+    - role: dotnet_app
+      vars:
+        dotnet_app_source: C:\Temp\TestApp
+        dotnet_app_healthcheck_enabled: false

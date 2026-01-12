@@ -1,0 +1,89 @@
+name: rhel9-hardening
+title: RHEL 9 CIS Benchmark Hardening Profile
+maintainer: UniCredit Migration Team
+copyright: UniCredit
+copyright_email: migration-team@unicredit.example.com
+license: MIT
+summary: CIS Benchmark-aligned hardening controls for RHEL 9 / Rocky Linux 9
+version: 1.0.0
+
+supports:
+  - platform-name: redhat
+    release: 9.*
+  - platform-name: rocky
+    release: 9.*
+  - platform-name: almalinux
+    release: 9.*
+
+depends:
+  - name: unicredit-baseline
+    path: ../unicredit-baseline
+
+inputs:
+  - name: ssh_permit_root_login
+    type: String
+    value: 'no'
+    description: SSH PermitRootLogin setting
+
+  - name: ssh_max_auth_tries
+    type: Numeric
+    value: 4
+    description: Maximum SSH authentication attempts
+
+  - name: password_min_length
+    type: Numeric
+    value: 14
+    description: Minimum password length
+
+  - name: password_max_days
+    type: Numeric
+    value: 90
+    description: Maximum password age in days
+
+  - name: selinux_mode
+    type: String
+    value: enforcing
+    description: SELinux enforcement mode
+
+  - name: unnecessary_services
+    type: Array
+    value:
+      - avahi-daemon
+      - cups
+      - dhcpd
+      - slapd
+      - nfs
+      - rpcbind
+      - named
+      - vsftpd
+      - httpd
+      - dovecot
+      - smb
+      - squid
+      - snmpd
+      - ypserv
+      - rsh.socket
+      - rlogin.socket
+      - rexec.socket
+      - telnet.socket
+      - tftp.socket
+    description: Services that should be disabled
+
+  - name: sysctl_hardening
+    type: Hash
+    value:
+      net.ipv4.ip_forward: 0
+      net.ipv4.conf.all.send_redirects: 0
+      net.ipv4.conf.default.send_redirects: 0
+      net.ipv4.conf.all.accept_redirects: 0
+      net.ipv4.conf.default.accept_redirects: 0
+      net.ipv4.conf.all.secure_redirects: 0
+      net.ipv4.conf.default.secure_redirects: 0
+      net.ipv4.conf.all.log_martians: 1
+      net.ipv4.conf.default.log_martians: 1
+      net.ipv4.icmp_echo_ignore_broadcasts: 1
+      net.ipv4.icmp_ignore_bogus_error_responses: 1
+      net.ipv4.conf.all.rp_filter: 1
+      net.ipv4.conf.default.rp_filter: 1
+      net.ipv4.tcp_syncookies: 1
+    description: Kernel sysctl hardening parameters

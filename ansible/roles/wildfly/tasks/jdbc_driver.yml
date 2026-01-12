@@ -1,0 +1,27 @@
+---
+# JDBC Driver Installation Tasks
+
+- name: Create module directory for PostgreSQL driver
+  ansible.builtin.file:
+    path: "{{ wildfly_home }}/modules/system/layers/base/org/postgresql/main"
+    state: directory
+    owner: "{{ wildfly_user }}"
+    group: "{{ wildfly_group }}"
+    mode: '0755'
+
+- name: Download PostgreSQL JDBC driver
+  ansible.builtin.get_url:
+    url: "{{ postgresql_jdbc_url }}"
+    dest: "{{ wildfly_home }}/modules/system/layers/base/org/postgresql/main/postgresql-{{ postgresql_jdbc_version }}.jar"
+    owner: "{{ wildfly_user }}"
+    group: "{{ wildfly_group }}"
+    mode: '0644'
+
+- name: Deploy PostgreSQL module.xml
+  ansible.builtin.template:
+    src: postgresql-module.xml.j2
+    dest: "{{ wildfly_home }}/modules/system/layers/base/org/postgresql/main/module.xml"
+    owner: "{{ wildfly_user }}"
+    group: "{{ wildfly_group }}"
+    mode: '0644'
+  notify: restart wildfly
